@@ -1,25 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Object Detection</title>
+    <title>تشخیص اشیا</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
-            text-align: center;
-            font-family: Arial, sans-serif;
+            font-family: "Arial", sans-serif;
         }
-        video, canvas {
-            border: 1px solid #ccc;
-            margin: 10px;
+        .video-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+        }
+        .dashboard {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>YOLO Object Detection</h1>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
+    <div class="container">
+        <h1 class="text-center mt-3">تشخیص اشیا با YOLO</h1>
+        
+        <div class="video-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="dashboard">
+            <h2>داشبورد</h2>
+            <div class="row text-center">
+                <div class="col-6 col-md-3">
+                    <h4>افراد</h4>
+                    <p id="people-count">0</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <h4>کلاه ایمنی</h4>
+                    <p id="hardhat-count">0</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <h4>جلیقه ایمنی</h4>
+                    <p id="vest-count">0</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <h4>ماسک</h4>
+                    <p id="mask-count">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();  // Initialize SocketIO
         const video = document.getElementById('video');
@@ -32,25 +66,30 @@
         });
 
         video.addEventListener('play', () => {
-            canvas.width = 640;  // Reduced resolution
+            canvas.width = 640;
             canvas.height = 360;
 
-            // Send frames to the server
             setInterval(() => {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/jpeg', 0.6);  // Reduce quality for faster processing
+                const dataURL = canvas.toDataURL('image/jpeg', 0.6);
                 socket.emit('frame', dataURL);
-            }, 300);  // Send frames every 300ms
+            }, 300);
         });
 
-        // Receive processed frames from the server
         socket.on('response_frame', (data) => {
             const img = new Image();
             img.src = data;
             img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);  // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             };
+        });
+
+        socket.on('dashboard_stats', (stats) => {
+            document.getElementById('people-count').innerText = stats.people || 0;
+            document.getElementById('hardhat-count').innerText = stats['Hardhat'] || 0;
+            document.getElementById('vest-count').innerText = stats['Safety Vest'] || 0;
+            document.getElementById('mask-count').innerText = stats['Mask'] || 0;
         });
     </script>
 </body>
