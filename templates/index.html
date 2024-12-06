@@ -55,37 +55,70 @@
     </div>
 
     <script>
-        const socket = io();  // Initialize SocketIO
+        const socket = io();
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Access webcam
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-            video.srcObject = stream;
+        let latestDetections = [];
+        let isProcessing = false;
+
+        // Use WebRTC for direct camera access
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(err => console.error("Error accessing the camera:", err));
+
+        video.addEventListener('loadedmetadata', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
         });
 
-        video.addEventListener('play', () => {
-            canvas.width = 640;
-            canvas.height = 360;
+        function sendFrame() {
+            if (isProcessing) return;
+            isProcessing = true;
 
-            setInterval(() => {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/jpeg', 0.6);
-                socket.emit('frame', dataURL);
-            }, 300);
-        });
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    socket.emit('frame', reader.result);
+                }
+                reader.readAsDataURL(blob);
+            }, 'image/jpeg', 0.7);
+        }
 
-        socket.on('response_frame', (data) => {
-            const img = new Image();
-            img.src = data;
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-        });
+        function drawDetections() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        socket.on('dashboard_stats', (stats) => {
+            latestDetections.forEach(detection => {
+                const [x1, y1, x2, y2] = detection.bbox;
+                const color = detection.class.includes('NO-') ? 'red' : 'green';
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                ctx.fillStyle = color;
+                ctx.font = '12px Arial';
+                ctx.fillText(`${detection.class} ${detection.confidence.toFixed(2)}`, x1, y1 > 10 ? y1 - 5 : 10);
+            });
+
+            requestAnimationFrame(drawDetections);
+        }
+
+        setInterval(sendFrame, 200);  // Send frame every 200ms
+        requestAnimationFrame(drawDetections);
+
+        socket.on('detection_results', (data) => {
+            latestDetections = data.detections;
+            isProcessing = false;
+
+            // Update dashboard
+            const stats = data.stats;
             document.getElementById('people-count').innerText = stats.people || 0;
             document.getElementById('hardhat-count').innerText = stats['Hardhat'] || 0;
             document.getElementById('vest-count').innerText = stats['Safety Vest'] || 0;
