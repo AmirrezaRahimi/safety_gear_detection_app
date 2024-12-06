@@ -8,8 +8,8 @@ class Camera {
         try {
             this.stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
-                    width: { ideal: 640 },
-                    height: { ideal: 360 },
+                    width: { ideal: 1280 },  // Increased from 640
+                    height: { ideal: 720 },  // Increased from 360
                     facingMode: "environment"
                 } 
             });

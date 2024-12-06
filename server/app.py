@@ -6,15 +6,15 @@ from .utils import setup_logging
 
 # Setup Flask and SocketIO
 app = Flask(__name__, 
-            template_folder=os.path.abspath('../templates'),
-            static_folder=os.path.abspath('../static'))
+            template_folder=os.path.abspath('templates'),
+            static_folder=os.path.abspath('static'))
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Setup logging
 logger = setup_logging()
 
 # Initialize object detector
-model_path = os.path.abspath('../models/ppe.pt')
+model_path = os.path.abspath('models/ppe.pt')
 detector = ObjectDetector(model_path)
 
 @app.route('/')
