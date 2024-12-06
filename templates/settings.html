@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Real-time Object Detection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-eye mr-2"></i>Object Detection
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/"><i class="fas fa-home mr-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/about"><i class="fas fa-info-circle mr-1"></i>About</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/settings"><i class="fas fa-cog mr-1"></i>Settings</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Detection Settings</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="confidence-threshold">Confidence Threshold</label>
+                        <input type="range" class="form-control-range" id="confidence-threshold" min="0" max="1" step="0.05" value="0.5">
+                        <small class="form-text text-muted">Current value: <span id="confidence-value">0.5</span></small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-4">
+        <p>&copy; 2023 Object Detection Project. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const confidenceThreshold = $('#confidence-threshold');
+            const confidenceValue = $('#confidence-value');
+
+            confidenceThreshold.on('input', function() {
+                confidenceValue.text($(this).val());
+            });
+
+            $('#settings-form').on('submit', function(e) {
+                e.preventDefault();
+                const settings = {
+                    confidence_threshold: confidenceThreshold.val()
+                };
+
+                $.ajax({
+                    url: '/update_settings',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(settings),
+                    success: function(response) {
+                        alert('Settings updated successfully');
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error updating settings: ' + error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

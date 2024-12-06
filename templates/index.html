@@ -1,129 +1,178 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تشخیص اشیا</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body {
-            font-family: "Arial", sans-serif;
-        }
-        .video-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        canvas {
-            border: 1px solid #ddd;
-        }
-        .dashboard {
-            margin-top: 20px;
-        }
-    </style>
+    <title>Real-time Object Detection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mt-3">تشخیص اشیا با YOLO</h1>
-        
-        <div class="video-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-eye mr-2"></i>Object Detection
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/"><i class="fas fa-home mr-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/about"><i class="fas fa-info-circle mr-1"></i>About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings"><i class="fas fa-cog mr-1"></i>Settings</a>
+                </li>
+            </ul>
         </div>
+    </nav>
 
-        <div class="dashboard">
-            <h2>داشبورد</h2>
-            <div class="row text-center">
-                <div class="col-6 col-md-3">
-                    <h4>افراد</h4>
-                    <p id="people-count">0</p>
+    <div class="container-fluid mt-4">
+        <h1 class="text-center mb-4">Real-time Object Detection</h1>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-camera mr-2"></i>Live Feed</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="video-container">
+                            <video id="video" autoplay playsinline style="display: none;"></video>
+                            <canvas id="canvas" class="w-100"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-6 col-md-3">
-                    <h4>کلاه ایمنی</h4>
-                    <p id="hardhat-count">0</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar mr-2"></i>Detection Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="stat-card">
+                                    <h4><i class="fas fa-user mr-2"></i>People</h4>
+                                    <p id="people-count">0</p>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="stat-card">
+                                    <h4><i class="fas fa-hard-hat mr-2"></i>Hard Hats</h4>
+                                    <p id="hardhat-count">0</p>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="stat-card">
+                                    <h4><i class="fas fa-vest mr-2"></i>Safety Vests</h4>
+                                    <p id="vest-count">0</p>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="stat-card">
+                                    <h4><i class="fas fa-head-side-mask mr-2"></i>Masks</h4>
+                                    <p id="mask-count">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-6 col-md-3">
-                    <h4>جلیقه ایمنی</h4>
-                    <p id="vest-count">0</p>
-                </div>
-                <div class="col-6 col-md-3">
-                    <h4>ماسک</h4>
-                    <p id="mask-count">0</p>
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle mr-2"></i>Detection Info</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Status:</strong> <span id="detection-status" class="badge badge-success">Running</span></p>
+                            <p><strong>FPS:</strong> <span id="fps-counter">0</span></p>
+                            <p><strong>Last Updated:</strong> <span id="last-updated">Never</span></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
-        const socket = io();
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-
-        let latestDetections = [];
-        let isProcessing = false;
-
-        // Use WebRTC for direct camera access
-        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.play();
-            })
-            .catch(err => console.error("Error accessing the camera:", err));
-
-        video.addEventListener('loadedmetadata', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-        });
-
-        function sendFrame() {
-            if (isProcessing) return;
-            isProcessing = true;
-
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(blob => {
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    socket.emit('frame', reader.result);
+    
+        <footer class="bg-dark text-white text-center py-3 mt-4">
+            <p>&copy; 2023 Object Detection Project. All rights reserved.</p>
+        </footer>
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/detection.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+        <script>
+            const socket = io();
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+    
+            const camera = new Camera(video);
+            const detectionRenderer = new DetectionRenderer(canvas);
+            const dashboard = new Dashboard();
+    
+            let isProcessing = false;
+            let frameCount = 0;
+            let lastFpsUpdateTime = Date.now();
+    
+            async function init() {
+                try {
+                    await camera.start();
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    detectionRenderer.start();
+                    setInterval(sendFrame, 200);
+                    setInterval(updateFps, 1000);
+                    $('#detection-status').text('Running').removeClass('badge-danger').addClass('badge-success');
+                } catch (error) {
+                    console.error("Error initializing camera:", error);
+                    $('#detection-status').text('Error').removeClass('badge-success').addClass('badge-danger');
                 }
-                reader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.7);
-        }
-
-        function drawDetections() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            latestDetections.forEach(detection => {
-                const [x1, y1, x2, y2] = detection.bbox;
-                const color = detection.class.includes('NO-') ? 'red' : 'green';
-
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-
-                ctx.fillStyle = color;
-                ctx.font = '12px Arial';
-                ctx.fillText(`${detection.class} ${detection.confidence.toFixed(2)}`, x1, y1 > 10 ? y1 - 5 : 10);
+            }
+    
+            function sendFrame() {
+                if (isProcessing) return;
+                isProcessing = true;
+    
+                const frame = camera.captureFrame();
+                socket.emit('frame', frame);
+                frameCount++;
+            }
+    
+            function updateFps() {
+                const now = Date.now();
+                const elapsed = (now - lastFpsUpdateTime) / 1000;
+                const fps = Math.round(frameCount / elapsed);
+                $('#fps-counter').text(fps);
+                frameCount = 0;
+                lastFpsUpdateTime = now;
+            }
+    
+            socket.on('detection_results', (data) => {
+                detectionRenderer.updateDetections(data.detections);
+                dashboard.update(data.stats);
+                isProcessing = false;
+                $('#last-updated').text(new Date().toLocaleTimeString());
             });
-
-            requestAnimationFrame(drawDetections);
-        }
-
-        setInterval(sendFrame, 200);  // Send frame every 200ms
-        requestAnimationFrame(drawDetections);
-
-        socket.on('detection_results', (data) => {
-            latestDetections = data.detections;
-            isProcessing = false;
-
-            // Update dashboard
-            const stats = data.stats;
-            document.getElementById('people-count').innerText = stats.people || 0;
-            document.getElementById('hardhat-count').innerText = stats['Hardhat'] || 0;
-            document.getElementById('vest-count').innerText = stats['Safety Vest'] || 0;
-            document.getElementById('mask-count').innerText = stats['Mask'] || 0;
-        });
-    </script>
-</body>
-</html>
+    
+            socket.on('connect_error', (error) => {
+                console.error("Connection error:", error);
+                $('#detection-status').text('Disconnected').removeClass('badge-success').addClass('badge-danger');
+            });
+    
+            socket.on('connect', () => {
+                $('#detection-status').text('Running').removeClass('badge-danger').addClass('badge-success');
+            });
+    
+            init().catch(console.error);
+        </script>
+    </body>
+    </html>
+    
